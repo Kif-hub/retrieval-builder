@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2D5A27">
+<meta name="description" content="Generate retrieval practice starters for any subject and year group">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Retrieval Practice Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
+  * { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --forest:#2D5A27; --forest-mid:#3D7A35; --forest-light:#C8DEC6;
+    --amber:#E8A020; --amber-light:#FBF0D9;
+    --teal:#1A7A6E; --teal-light:#D4EDEA;
+    --buff:#F5F0E8; --dark:#1A2A1A; --muted:#6A7A6A;
+    --cream:#fdf8f0; --border:#d4c9b5;
+    --shadow:0 4px 20px rgba(45,90,61,0.12);
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--dark); min-height:100vh; }
+  .app { max-width:800px; margin:0 auto; padding:24px 20px 80px; }
+
+  header { text-align:center; margin-bottom:26px; padding:28px 24px 22px; background:var(--forest); border-radius:16px; position:relative; overflow:hidden; }
+  header::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:rgba(232,160,32,0.12); border-radius:50%; }
+  header::after  { content:''; position:absolute; bottom:-30px; left:-30px; width:120px; height:120px; background:rgba(255,255,255,0.04); border-radius:50%; }
+  .hbadge { display:inline-block; background:var(--amber); color:var(--dark); font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; padding:4px 12px; border-radius:20px; margin-bottom:10px; }
+  header h1 { font-family:'Playfair Display',serif; color:#fff; font-size:26px; margin-bottom:5px; position:relative; }
+  header p { color:rgba(255,255,255,0.65); font-size:13px; position:relative; }
+
+  .card { background:#fff; border-radius:14px; padding:22px; margin-bottom:16px; box-shadow:var(--shadow); border:1px solid var(--border); }
+  .card-title { font-size:12px; font-weight:600; color:var(--forest); text-transform:uppercase; letter-spacing:1px; margin-bottom:13px; display:flex; align-items:center; gap:8px; }
+  .card-title span { display:inline-flex; align-items:center; justify-content:center; width:21px; height:21px; background:var(--forest); color:#fff; border-radius:50%; font-size:11px; font-family:'Playfair Display',serif; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:5px; }
+  select, input { width:100%; padding:9px 13px; border:1.5px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--dark); background:var(--cream); transition:border-color 0.2s; -webkit-appearance:none; appearance:none; }
+  select:focus, input:focus { outline:none; border-color:var(--forest); background:#fff; }
+  select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6357' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; cursor:pointer; }
+
+  .subject-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+  .subj-btn { padding:9px 8px; border:1.5px solid var(--border); border-radius:10px; background:var(--cream); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--muted); display:flex; align-items:center; gap:7px; transition:all 0.2s; }
+  .subj-btn:hover { border-color:var(--forest-mid); color:var(--forest); }
+  .subj-btn.active { border-color:var(--forest); background:var(--forest); color:#fff; }
+
+  .qmix-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .qmix-block { background:var(--buff); border-radius:10px; padding:13px 15px; }
+  .qmix-block.do   { border-left:4px solid var(--amber); }
+  .qmix-block.know { border-left:4px solid var(--teal); }
+  .qmix-lbl { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+  .qmix-lbl.do   { color:#b07800; }
+  .qmix-lbl.know { color:var(--teal); }
+  .qmix-desc { font-size:11px; color:var(--muted); margin-bottom:9px; line-height:1.4; }
+  .counter { display:flex; align-items:center; gap:10px; }
+  .cbtn { width:28px; height:28px; border-radius:50%; border:1.5px solid var(--border); background:#fff; font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted); transition:all 0.15s; font-weight:700; line-height:1; }
+  .cbtn:hover { border-color:var(--forest); color:var(--forest); }
+  .cval { font-size:21px; font-family:'Playfair Display',serif; font-weight:700; min-width:22px; text-align:center; }
+  .cunit { font-size:11px; color:var(--muted); }
+
+  .qmix-preview { margin-top:11px; padding:10px 13px; background:#fff; border-radius:8px; border:1px solid var(--border); font-size:12px; color:var(--muted); display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; }
+  .ph { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+  .ph.do   { color:#b07800; }
+  .ph.know { color:var(--teal); }
+  .qmix-cell { padding:4px 8px; border-radius:5px; font-size:11px; text-align:center; }
+  .qmix-cell.do   { background:var(--amber-light); color:var(--dark); }
+  .qmix-cell.know { background:var(--teal-light);  color:var(--dark); }
+
+  .type-row { display:flex; gap:10px; }
+  .type-btn { flex:1; padding:10px 8px; border:1.5px solid var(--border); border-radius:10px; background:var(--cream); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--muted); text-align:center; transition:all 0.2s; }
+  .type-btn:hover { border-color:var(--amber); }
+  .type-btn.active { border-color:var(--amber); background:var(--amber); color:var(--dark); }
+  .type-icon { font-size:16px; display:block; margin-bottom:3px; }
+
+  .gen-btn { width:100%; padding:14px; background:var(--forest); color:#fff; border:none; border-radius:12px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.2s; margin-top:6px; }
+  .gen-btn:hover { background:var(--forest-mid); transform:translateY(-1px); box-shadow:0 6px 20px rgba(45,90,61,0.25); }
+  .gen-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+  .out-section { display:none; margin-top:20px; }
+  .out-section.visible { display:block; }
+  .out-card { background:#fff; border-radius:14px; border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+  .out-hdr { background:var(--forest); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .out-hdr h3 { font-family:'Playfair Display',serif; font-size:16px; }
+  .out-hdr .meta { font-size:11px; opacity:0.7; margin-top:2px; }
+  .out-actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .abtn { padding:6px 12px; border-radius:7px; border:1.5px solid rgba(255,255,255,0.4); background:transparent; color:#fff; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .abtn:hover { background:rgba(255,255,255,0.15); }
+  .abtn.amber { background:var(--amber); border-color:var(--amber); color:var(--dark); }
+  .abtn.teal  { background:var(--teal);  border-color:var(--teal);  color:#fff; }
+  .out-body { padding:20px; }
+
+  .sec-hd { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:9px; }
+  .qblock { padding:12px 14px; border-radius:9px; margin-bottom:8px; background:var(--buff); }
+  .qblock.do   { border-left:4px solid var(--amber); }
+  .qblock.know { border-left:4px solid var(--teal); }
+  .qtag { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .qtag.do   { color:#b07800; }
+  .qtag.know { color:var(--teal); }
+  .qtext { font-size:15px; line-height:1.5; }
+  .qans  { margin-top:6px; padding-top:6px; border-top:1px dashed var(--border); font-size:13px; color:var(--muted); }
+  .qans strong { color:var(--forest); }
+  .divider { display:flex; align-items:center; gap:12px; margin:16px 0; color:var(--muted); font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .slide-wrap { border-radius:10px; overflow:hidden; border:2px solid var(--border); box-shadow:0 8px 30px rgba(0,0,0,0.12); }
+  .slide-inner { position:relative; width:100%; padding-bottom:56.25%; background:var(--buff); }
+  .slide-inner svg { position:absolute; top:0; left:0; width:100%; height:100%; }
+  .slide-note { font-size:11px; color:var(--muted); text-align:center; margin-top:8px; margin-bottom:16px; font-style:italic; }
+
+  .loading { text-align:center; padding:36px 20px; color:var(--muted); }
+  .spinner { display:inline-block; width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--forest); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:10px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .err { background:#fef0f0; border:1px solid #f0c0c0; color:#c0392b; padding:13px 15px; border-radius:8px; font-size:13px; margin-top:10px; }
+  .ks1-note { background:#e8f0f8; border:1px solid #b0c8e0; color:#2a6096; padding:9px 13px; border-radius:8px; font-size:12px; margin-top:11px; display:none; }
+  .ks1-note.vis { display:block; }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--dark); color:#fff; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; transition:transform 0.3s; z-index:1000; pointer-events:none; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* PWA install banner */
+  .install-banner { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--forest); color:#fff; padding:14px 20px; align-items:center; justify-content:space-between; gap:12px; z-index:999; }
+  .install-banner.show { display:flex; }
+  .install-banner p { font-size:13px; flex:1; }
+  .install-banner strong { display:block; font-size:14px; margin-bottom:2px; }
+  .ibtn { padding:8px 16px; border-radius:8px; border:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+  .ibtn.yes { background:var(--amber); color:var(--dark); }
+  .ibtn.no  { background:transparent; border:1.5px solid rgba(255,255,255,0.4); color:#fff; }
+
+  @media (max-width:580px) {
+    .grid-2,.subject-grid,.qmix-grid { grid-template-columns:1fr; }
+    .type-row { flex-direction:column; }
+    header h1 { font-size:22px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="hbadge">Primary Teaching Tool</div>
+    <h1>Retrieval Practice Builder</h1>
+    <p>Know More &amp; Do More starters — every year group, every subject</p>
+  </header>
+
+  <!-- 1 Subject -->
+  <div class="card">
+    <div class="card-title"><span>1</span> Subject</div>
+    <div class="subject-grid">
+      <button class="subj-btn active" data-s="English"   onclick="setSub(this)">📖 English</button>
+      <button class="subj-btn"        data-s="Maths"     onclick="setSub(this)">🔢 Maths</button>
+      <button class="subj-btn"        data-s="Science"   onclick="setSub(this)">🔬 Science</button>
+      <button class="subj-btn"        data-s="History"   onclick="setSub(this)">🏛️ History</button>
+      <button class="subj-btn"        data-s="Geography" onclick="setSub(this)">🌍 Geography</button>
+      <button class="subj-btn"        data-s="RE"        onclick="setSub(this)">✨ RE</button>
+    </div>
+  </div>
+
+  <!-- 2 Details -->
+  <div class="card">
+    <div class="card-title"><span>2</span> Details</div>
+    <div class="grid-2" style="margin-bottom:13px">
+      <div>
+        <label>Year Group</label>
+        <select id="yg" onchange="onYG()">
+          <option>Year 1</option><option>Year 2</option><option>Year 3</option>
+          <option>Year 4</option><option selected>Year 5</option><option>Year 6</option>
+        </select>
+      </div>
+      <div></div>
+    </div>
+    <div class="ks1-note" id="ks1">📌 <strong>KS1 mode:</strong> Questions will use simple, concrete language appropriate for Year 1/2.</div>
+    <div style="margin-top:13px;margin-bottom:13px">
+      <label>Current / Recent Topic</label>
+      <input type="text" id="rt" placeholder="e.g. The Water Cycle, Addition, WW2…" />
+    </div>
+    <div>
+      <label>Earlier / Older Topic <span style="font-weight:400;color:#bbb">(spaced retrieval)</span></label>
+      <input type="text" id="ot" placeholder="e.g. Rivers, Counting to 20, The Romans…" />
+    </div>
+  </div>
+
+  <!-- 3 Question Mix -->
+  <div class="card">
+    <div class="card-title"><span>3</span> Question Mix</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Each row = 2 questions — one for recent topic (left), one for earlier topic (right).</p>
+    <div class="qmix-grid">
+      <div class="qmix-block do">
+        <div class="qmix-lbl do">✏️ Do More rows</div>
+        <div class="qmix-desc">Apply knowledge — explain, justify, use in context</div>
+        <div class="counter">
+          <button class="cbtn" onclick="adj('do',-1)">−</button>
+          <div class="cval" id="dv">1</div>
+          <button class="cbtn" onclick="adj('do',1)">+</button>
+          <span class="cunit">row(s)</span>
+        </div>
+      </div>
+      <div class="qmix-block know">
+        <div class="qmix-lbl know">📚 Know More rows</div>
+        <div class="qmix-desc">Recall facts, vocabulary, definitions, names</div>
+        <div class="counter">
+          <button class="cbtn" onclick="adj('know',-1)">−</button>
+          <div class="cval" id="kv">1</div>
+          <button class="cbtn" onclick="adj('know',1)">+</button>
+          <span class="cunit">row(s)</span>
+        </div>
+      </div>
+    </div>
+    <div class="qmix-preview" id="gridPreview"></div>
+    <div style="margin-top:9px;font-size:12px;color:var(--muted);text-align:center">
+      Total: <strong id="tot">4</strong> questions on the slide
+    </div>
+  </div>
+
+  <!-- 4 Output -->
+  <div class="card">
+    <div class="card-title"><span>4</span> Output Format</div>
+    <div class="type-row">
+      <button class="type-btn active" data-t="qa"    onclick="setType(this)"><span class="type-icon">📝</span>Questions + Answers</button>
+      <button class="type-btn"        data-t="slide" onclick="setType(this)"><span class="type-icon">🖥️</span>Slide Preview + .pptx</button>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="gb" onclick="generate()">✦ Generate Retrieval Starter</button>
+
+  <div class="out-section" id="os">
+    <div id="ls" class="out-card" style="display:none">
+      <div class="loading"><div class="spinner"></div><p>Generating your retrieval starter…</p></div>
+    </div>
+    <div id="rs" class="out-card" style="display:none">
+      <div class="out-hdr">
+        <div><h3 id="ot2"></h3><div class="meta" id="om"></div></div>
+        <div class="out-actions">
+          <button class="abtn" onclick="copyText()">Copy Text</button>
+          <button class="abtn teal" id="pptxBtn" onclick="buildPptx()" style="display:none">⬇ Download .pptx</button>
+          <button class="abtn amber" onclick="generate()">↺ Regenerate</button>
+        </div>
+      </div>
+      <div class="out-body" id="ob"></div>
+    </div>
+    <div id="er" class="err" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- PWA install banner -->
+<div class="install-banner" id="installBanner">
+  <p><strong>Add to Home Screen</strong>Use this app like a native app on your device</p>
+  <button class="ibtn yes" onclick="installApp()">Install</button>
+  <button class="ibtn no"  onclick="dismissInstall()">Not now</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script>
+// ── Config ───────────────────────────────────────────────
+// Replace with your Cloudflare Worker URL after deployment
+const WORKER_URL = 'https://retrieval-builder.YOUR-SUBDOMAIN.workers.dev';
+
+// ── State ────────────────────────────────────────────────
+var sub='English', typ='qa', doR=1, knowR=1, last=null;
+
+// ── Subject / type / year ────────────────────────────────
+function setSub(b){document.querySelectorAll('.subj-btn').forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); sub=b.dataset.s;}
+function setType(b){document.querySelectorAll('.type-btn').forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); typ=b.dataset.t;}
+function onYG(){var v=document.getElementById('yg').value; document.getElementById('ks1').classList.toggle('vis',v==='Year 1'||v==='Year 2');}
+
+// ── Counters ─────────────────────────────────────────────
+function adj(t,d){
+  if(t==='do'){doR=Math.max(1,Math.min(4,doR+d)); document.getElementById('dv').textContent=doR;}
+  else{knowR=Math.max(1,Math.min(4,knowR+d)); document.getElementById('kv').textContent=knowR;}
+  document.getElementById('tot').textContent=(doR+knowR)*2;
+  updateGridPreview();
+}
+
+function updateGridPreview(){
+  var html='';
+  for(var i=0;i<doR;i++){
+    html+='<div><div class="ph do">'+(i===0?'Do More':'&nbsp;')+'</div><div class="qmix-cell do">Recent Q'+(i*2+1)+'</div></div>';
+    html+='<div><div class="ph do">&nbsp;</div><div class="qmix-cell do">Earlier Q'+(i*2+2)+'</div></div>';
+  }
+  for(var j=0;j<knowR;j++){
+    html+='<div><div class="ph know">'+(j===0?'Know More':'&nbsp;')+'</div><div class="qmix-cell know">Recent Q'+(doR*2+j*2+1)+'</div></div>';
+    html+='<div><div class="ph know">&nbsp;</div><div class="qmix-cell know">Earlier Q'+(doR*2+j*2+2)+'</div></div>';
+  }
+  document.getElementById('gridPreview').innerHTML=html;
+}
+updateGridPreview();
+
+// ── Generate ─────────────────────────────────────────────
+async function generate(){
+  var rt=document.getElementById('rt').value.trim();
+  var ot=document.getElementById('ot').value.trim();
+  var yg=document.getElementById('yg').value;
+  if(!rt||!ot){alert('Please enter both topics.');return;}
+
+  document.getElementById('gb').disabled=true;
+  document.getElementById('os').classList.add('visible');
+  document.getElementById('ls').style.display='block';
+  document.getElementById('rs').style.display='none';
+  document.getElementById('er').style.display='none';
+
+  try{
+    var r=await fetch(WORKER_URL+'/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subject:sub,yearGroup:yg,recentTopic:rt,olderTopic:ot,doRows:doR,knowRows:knowR})
+    });
+    if(!r.ok) throw new Error('Worker error: '+r.status);
+    var parsed=await r.json();
+    last={parsed:parsed,rt:rt,ot:ot,yg:yg,doR:doR,knowR:knowR};
+
+    document.getElementById('ls').style.display='none';
+    document.getElementById('rs').style.display='block';
+    document.getElementById('ot2').textContent=sub+' — '+yg+' Retrieval Starter';
+    document.getElementById('om').textContent='Recent: '+rt+'  ·  Earlier: '+ot+'  ·  '+(doR+knowR)*2+' questions';
+    document.getElementById('pptxBtn').style.display=(typ==='slide')?'inline-block':'none';
+
+    if(typ==='slide') renderSlide(parsed,rt,ot,yg);
+    else renderQA(parsed,rt,ot);
+  }catch(e){
+    document.getElementById('ls').style.display='none';
+    document.getElementById('er').style.display='block';
+    document.getElementById('er').textContent='Could not generate questions. Please check your connection and try again.';
+    console.error(e);
+  }
+  document.getElementById('gb').disabled=false;
+}
+
+// ── Render QA ────────────────────────────────────────────
+function renderQA(parsed,rt,ot){
+  var n=1,h='';
+  h+='<div class="sec-hd" style="color:var(--amber)">✏️ Do More</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+  var doLen=Math.max((parsed.recentDo||[]).length,(parsed.olderDo||[]).length);
+  for(var i=0;i<doLen;i++){
+    var rd=parsed.recentDo[i],od=parsed.olderDo[i];
+    if(rd)h+='<div class="qblock do"><div class="qtag do">Q'+(n++)+' Recent</div><div class="qtext">'+rd.q+'</div><div class="qans"><strong>A:</strong> '+rd.a+'</div></div>';
+    else h+='<div></div>';
+    if(od)h+='<div class="qblock do"><div class="qtag do">Q'+(n++)+' Earlier</div><div class="qtext">'+od.q+'</div><div class="qans"><strong>A:</strong> '+od.a+'</div></div>';
+    else h+='<div></div>';
+  }
+  h+='</div><div class="sec-hd" style="color:var(--teal)">📚 Know More</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  var kmLen=Math.max((parsed.recentKnow||[]).length,(parsed.olderKnow||[]).length);
+  for(var j=0;j<kmLen;j++){
+    var rk=parsed.recentKnow[j],ok=parsed.olderKnow[j];
+    if(rk)h+='<div class="qblock know"><div class="qtag know">Q'+(n++)+' Recent</div><div class="qtext">'+rk.q+'</div><div class="qans"><strong>A:</strong> '+rk.a+'</div></div>';
+    else h+='<div></div>';
+    if(ok)h+='<div class="qblock know"><div class="qtag know">Q'+(n++)+' Earlier</div><div class="qtext">'+ok.q+'</div><div class="qans"><strong>A:</strong> '+ok.a+'</div></div>';
+    else h+='<div></div>';
+  }
+  h+='</div>';
+  document.getElementById('ob').innerHTML=h;
+}
+
+// ── Render Slide Preview ──────────────────────────────────
+function renderSlide(parsed,rt,ot,yg){
+  var rdo=(parsed.recentDo||[]).map(function(i){return i.q;});
+  var odo=(parsed.olderDo||[]).map(function(i){return i.q;});
+  var rk=(parsed.recentKnow||[]).map(function(i){return i.q;});
+  var ok=(parsed.olderKnow||[]).map(function(i){return i.q;});
+
+  var W=1000,H=562.5;
+  var BUFF='#F5F0E8',FOREST='#2D5A27',FOREST_L='#C8DEC6',AMBER='#E8A020',AMBER_L='#FBF0D9',TEAL='#1A7A6E',TEAL_L='#D4EDEA',DARK='#1A2A1A',MUTED='#6A7A6A',WHITE='#FFFFFF';
+
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function wrap(txt,x,y,w,h2,fs,fill,bold){
+    var cpl=Math.floor(w/(fs*0.52)),lh=fs*1.35,words=(txt||'').split(' '),lines=[],cur='';
+    words.forEach(function(w2){if((cur+' '+w2).trim().length<=cpl)cur=(cur+' '+w2).trim();else{if(cur)lines.push(cur);cur=w2;}});
+    if(cur)lines.push(cur);
+    var maxL=Math.floor(h2/lh);lines=lines.slice(0,maxL);
+    return lines.map(function(l,i){return'<text x="'+x+'" y="'+(y+(i+1)*lh)+'" font-size="'+fs+'" fill="'+fill+'" font-family="Arial,sans-serif"'+(bold?' font-weight="bold"':'')+'>'+esc(l)+'</text>';}).join('');
+  }
+  function card(x,y,w,h2,cbg,lbg,ltxt,label,qNum,qTxt){
+    var lh=36;
+    return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h2+'" rx="5" fill="'+cbg+'" stroke="#D8DDE2" stroke-width="1"/>'
+      +'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+lh+'" rx="5" fill="'+lbg+'"/>'
+      +'<rect x="'+x+'" y="'+(y+lh-5)+'" width="'+w+'" height="5" fill="'+lbg+'"/>'
+      +'<text x="'+(x+w/2)+'" y="'+(y+lh/2+4)+'" font-size="10" fill="'+ltxt+'" font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="1">'+esc(label+' · Q'+qNum)+'</text>'
+      +wrap(qTxt,x+12,y+lh+2,w-24,h2-lh-8,14,DARK,false);
+  }
+
+  var panW=252,divX=panW+8,gridX=divX+11;
+  var colW=(W-gridX-10)/2-7,gapX=12,col2X=gridX+colW+gapX;
+  var topY=14,usH=H-topY-10;
+  var dR=Math.max(rdo.length,odo.length,1),kR=Math.max(rk.length,ok.length,1);
+  var secGap=12;
+  var doSecH=(usH-secGap)*dR/(dR+kR),kmSecH=(usH-secGap)*kR/(dR+kR);
+  var doY=topY,kmY=topY+doSecH+secGap;
+  var doCardH=doSecH/dR-6,kmCardH=kmSecH/kR-6;
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  svg+='<rect width="'+W+'" height="'+H+'" fill="'+BUFF+'"/>';
+  svg+='<rect x="'+divX+'" y="18" width="3" height="'+(H-36)+'" fill="'+FOREST_L+'"/>';
+  svg+='<rect x="'+(W-215)+'" y="14" width="205" height="32" rx="4" fill="'+FOREST+'"/>';
+  svg+='<text x="'+(W-112)+'" y="35" font-size="10" fill="'+WHITE+'" font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="1">'+esc(sub.toUpperCase()+' · '+yg)+'</text>';
+  svg+='<rect x="22" y="20" width="208" height="158" rx="8" fill="'+FOREST_L+'" opacity="0.35"/>';
+  svg+='<text x="126" y="110" font-size="64" fill="'+FOREST+'" font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle" opacity="0.25">R</text>';
+  svg+='<text x="126" y="152" font-size="11" fill="'+FOREST+'" font-family="Arial,sans-serif" text-anchor="middle" font-style="italic" opacity="0.7">On your whiteboards…</text>';
+  svg+='<rect x="10" y="192" width="232" height="22" rx="3" fill="'+AMBER+'"/>';
+  svg+='<text x="126" y="208" font-size="9" fill="'+FOREST+'" font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="1">RECENT</text>';
+  svg+=wrap(rt,14,208,228,50,10,FOREST,true);
+  svg+='<rect x="10" y="272" width="232" height="22" rx="3" fill="'+TEAL+'"/>';
+  svg+='<text x="126" y="288" font-size="9" fill="'+WHITE+'" font-family="Arial,sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="1">EARLIER</text>';
+  svg+=wrap(ot,14,288,228,50,10,MUTED,true);
+  for(var i=0;i<dR;i++){var cy=doY+i*(doCardH+6); svg+=card(gridX,cy,colW,doCardH,AMBER_L,AMBER,FOREST,'DO MORE',i*2+1,rdo[i]||''); svg+=card(col2X,cy,colW,doCardH,AMBER_L,AMBER,FOREST,'DO MORE',i*2+2,odo[i]||'');}
+  for(var j=0;j<kR;j++){var ky=kmY+j*(kmCardH+6); svg+=card(gridX,ky,colW,kmCardH,TEAL_L,TEAL,WHITE,'KNOW MORE',dR*2+j*2+1,rk[j]||''); svg+=card(col2X,ky,colW,kmCardH,TEAL_L,TEAL,WHITE,'KNOW MORE',dR*2+j*2+2,ok[j]||'');}
+  svg+='</svg>';
+
+  var n=1;
+  var h='<div class="slide-wrap"><div class="slide-inner">'+svg+'</div></div>';
+  h+='<p class="slide-note">Slide preview — click "Download .pptx" to get the PowerPoint file with the retrieval icon</p>';
+  h+='<div><div class="sec-hd" style="color:var(--muted)">Answer Key</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  (parsed.recentDo||[]).forEach(function(item){h+='<div class="qblock do"><div class="qtag do">Do More Q'+(n++)+' Recent</div><div class="qtext">'+item.q+'</div><div class="qans"><strong>A:</strong> '+item.a+'</div></div>';});
+  (parsed.olderDo||[]).forEach(function(item){h+='<div class="qblock do"><div class="qtag do">Do More Q'+(n++)+' Earlier</div><div class="qtext">'+item.q+'</div><div class="qans"><strong>A:</strong> '+item.a+'</div></div>';});
+  (parsed.recentKnow||[]).forEach(function(item){h+='<div class="qblock know"><div class="qtag know">Know More Q'+(n++)+' Recent</div><div class="qtext">'+item.q+'</div><div class="qans"><strong>A:</strong> '+item.a+'</div></div>';});
+  (parsed.olderKnow||[]).forEach(function(item){h+='<div class="qblock know"><div class="qtag know">Know More Q'+(n++)+' Earlier</div><div class="qtext">'+item.q+'</div><div class="qans"><strong>A:</strong> '+item.a+'</div></div>';});
+  h+='</div></div>';
+  document.getElementById('ob').innerHTML=h;
+}
+
+// ── Build PPTX (client-side) ──────────────────────────────
+async function buildPptx(){
+  if(!last){return;}
+  var btn=document.getElementById('pptxBtn');
+  btn.textContent='Building…'; btn.disabled=true;
+
+  var p=last.parsed;
+  var rdo=(p.recentDo||[]).map(function(i){return i.q;});
+  var odo=(p.olderDo||[]).map(function(i){return i.q;});
+  var rk=(p.recentKnow||[]).map(function(i){return i.q;});
+  var ok=(p.olderKnow||[]).map(function(i){return i.q;});
+
+  var C={forest:'2D5A27',forestLight:'C8DEC6',amber:'E8A020',amberLight:'FBF0D9',teal:'1A7A6E',tealLight:'D4EDEA',buff:'F5F0E8',white:'FFFFFF',darkText:'1A2A1A',mutedText:'6A7A6A'};
+  var FONT='Arial';
+  var mkShadow=function(){return{type:'outer',color:'000000',blur:6,offset:2,angle:135,opacity:0.10};};
+
+  var pres=new PptxGenJS();
+  pres.layout='LAYOUT_WIDE';
+
+  var SW=13.33,SH=7.5;
+  var panW=3.20,divX=panW+0.08,gridX=divX+0.14;
+  var colW=(SW-gridX-0.15)/2-0.10,gapX=0.20,col2X=gridX+colW+gapX;
+  var topY=0.15,padB=0.15,usableH=SH-topY-padB;
+  var doRows=Math.max(rdo.length,odo.length,1),knowRows=Math.max(rk.length,ok.length,1);
+  var secGap=0.16;
+  var doSecH=(usableH-secGap)*doRows/(doRows+knowRows);
+  var kmSecH=(usableH-secGap)*knowRows/(doRows+knowRows);
+  var doY=topY,kmY=topY+doSecH+secGap;
+  var labelBarH=0.44,cardPad=0.08,textPad=0.16;
+
+  var s=pres.addSlide();
+  s.background={color:C.buff};
+
+  // Fetch and embed retrieval icon
+  try{
+    var iconResp=await fetch('icons/retrieval_icon.png');
+    var iconBlob=await iconResp.blob();
+    var iconB64=await new Promise(function(res){
+      var reader=new FileReader();
+      reader.onloadend=function(){res(reader.result.split(',')[1]);};
+      reader.readAsDataURL(iconBlob);
+    });
+    s.addImage({data:'image/png;base64,'+iconB64,x:0.30,y:0.22,w:2.55,h:1.95});
+  }catch(e){
+    // Icon fallback — draw a placeholder rectangle if image fails
+    s.addShape(pres.ShapeType.rect,{x:0.30,y:0.22,w:2.55,h:1.95,fill:{color:C.forestLight},line:{color:C.forestLight}});
+  }
+
+  // Divider
+  s.addShape(pres.ShapeType.rect,{x:divX,y:0.15,w:0.04,h:SH-0.30,fill:{color:C.forestLight},line:{color:C.forestLight}});
+  // "On your whiteboards"
+  s.addText('On your whiteboards\u2026',{x:0.10,y:2.30,w:panW-0.10,h:0.45,fontSize:13,color:C.mutedText,italic:true,fontFace:FONT,align:'center'});
+  // RECENT label
+  s.addShape(pres.ShapeType.rect,{x:0.10,y:2.95,w:panW-0.10,h:0.32,fill:{color:C.amber},line:{color:C.amber}});
+  s.addText('RECENT',{x:0.10,y:2.95,w:panW-0.10,h:0.32,fontSize:10,color:C.forest,bold:true,fontFace:FONT,align:'center',valign:'middle',charSpacing:1});
+  s.addText(last.rt,{x:0.10,y:3.30,w:panW-0.10,h:0.90,fontSize:12,color:C.forest,fontFace:FONT,align:'center',valign:'top'});
+  // EARLIER label
+  s.addShape(pres.ShapeType.rect,{x:0.10,y:4.30,w:panW-0.10,h:0.32,fill:{color:C.teal},line:{color:C.teal}});
+  s.addText('EARLIER',{x:0.10,y:4.30,w:panW-0.10,h:0.32,fontSize:10,color:C.white,bold:true,fontFace:FONT,align:'center',valign:'middle',charSpacing:1});
+  s.addText(last.ot,{x:0.10,y:4.65,w:panW-0.10,h:0.90,fontSize:12,color:C.mutedText,fontFace:FONT,align:'center',valign:'top'});
+  // Subject badge
+  s.addShape(pres.ShapeType.rect,{x:SW-2.80,y:0.16,w:2.65,h:0.38,fill:{color:C.forest},line:{color:C.forest}});
+  s.addText(sub.toUpperCase()+' \u00B7 '+last.yg,{x:SW-2.80,y:0.16,w:2.65,h:0.38,fontSize:10,color:C.white,bold:true,fontFace:FONT,align:'center',valign:'middle',charSpacing:1});
+
+  function drawCards(lArr,rArr,secY,secH,label,lbg,ltxt,cbg,qOff){
+    var rows=Math.max(lArr.length,rArr.length,1);
+    var rowH=secH/rows;
+    for(var r=0;r<rows;r++){
+      var qL=lArr[r]||'',qR=rArr[r]||'';
+      var ry=secY+r*rowH,rh=rowH-cardPad;
+      [[qL,gridX],[qR,col2X]].forEach(function(pair,ci){
+        var q=pair[0],cx=pair[1];
+        var qNum=qOff+r*2+ci+1;
+        var textH=rh-labelBarH-textPad-0.10;
+        var fs=textH>1.8?17:textH>1.2?15:13;
+        s.addShape(pres.ShapeType.rect,{x:cx,y:ry,w:colW,h:rh,fill:{color:cbg},line:{color:'D8DDE2',pt:1},shadow:mkShadow()});
+        s.addShape(pres.ShapeType.rect,{x:cx,y:ry,w:colW,h:labelBarH,fill:{color:lbg},line:{color:lbg}});
+        s.addText(label+' \u00B7 Q'+qNum,{x:cx,y:ry,w:colW,h:labelBarH,fontSize:11,color:ltxt,bold:true,fontFace:FONT,align:'center',valign:'middle',charSpacing:1});
+        s.addText(q,{x:cx+0.20,y:ry+labelBarH+textPad,w:colW-0.40,h:textH,fontSize:fs,color:C.darkText,fontFace:FONT,valign:'top'});
+      });
+    }
+  }
+
+  drawCards(rdo,odo,doY,doSecH,'DO MORE',C.amber,C.forest,C.amberLight,0);
+  drawCards(rk,ok,kmY,kmSecH,'KNOW MORE',C.teal,C.white,C.tealLight,doRows*2);
+  s.addNotes(sub+' — '+last.yg+'\nRecent: '+last.rt+' | Earlier: '+last.ot);
+
+  var fname=sub.replace(/\s+/g,'_')+'_'+last.yg.replace(/\s+/g,'')+'_Retrieval.pptx';
+  await pres.writeFile({fileName:fname});
+
+  btn.textContent='⬇ Download .pptx'; btn.disabled=false;
+  showToast('✓ PowerPoint downloaded');
+}
+
+// ── Copy text ─────────────────────────────────────────────
+function copyText(){
+  if(!last) return;
+  var p=last.parsed,n=1;
+  var txt=sub+' — '+last.yg+' Retrieval Starter\nRecent: '+last.rt+' | Earlier: '+last.ot+'\n\n';
+  txt+='DO MORE\n';
+  (p.recentDo||[]).forEach(function(i){txt+='Q'+(n++)+' (Recent): '+i.q+'\nA: '+i.a+'\n';});
+  (p.olderDo||[]).forEach(function(i){txt+='Q'+(n++)+' (Earlier): '+i.q+'\nA: '+i.a+'\n';});
+  txt+='\nKNOW MORE\n';
+  (p.recentKnow||[]).forEach(function(i){txt+='Q'+(n++)+' (Recent): '+i.q+'\nA: '+i.a+'\n';});
+  (p.olderKnow||[]).forEach(function(i){txt+='Q'+(n++)+' (Earlier): '+i.q+'\nA: '+i.a+'\n';});
+  navigator.clipboard.writeText(txt).then(function(){showToast('✓ Copied to clipboard');});
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2400);
+}
+
+// ── PWA install ───────────────────────────────────────────
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault(); deferredPrompt=e;
+  if(!localStorage.getItem('installDismissed'))
+    document.getElementById('installBanner').classList.add('show');
+});
+function installApp(){
+  document.getElementById('installBanner').classList.remove('show');
+  if(deferredPrompt){deferredPrompt.prompt(); deferredPrompt=null;}
+}
+function dismissInstall(){
+  document.getElementById('installBanner').classList.remove('show');
+  localStorage.setItem('installDismissed','1');
+}
+</script>
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("/sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
