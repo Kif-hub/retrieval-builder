@@ -308,14 +308,13 @@ async function generate(){
   document.getElementById('er').style.display='none';
 
   try{
-    var r=await fetch('https://api.anthropic.com/v1/messages',{
+    var r=await fetch('https://winter-sky-7821.kcullerne.workers.dev/generate',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1400,messages:[{role:'user',content:buildPrompt(sub,yg,rt,ot,doR,knowR)}]})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subject:sub,yearGroup:yg,recentTopic:rt,olderTopic:ot,doRows:doR,knowRows:knowR})
     });
-    if(!r.ok) throw new Error('API error: '+r.status);
-    var d=await r.json();
-    var parsed=JSON.parse(d.content.map(function(i){return i.text||'';}).join('').replace(/```json|```/g,'').trim());
+    if(!r.ok) throw new Error('Worker error: '+r.status);
+    var parsed=await r.json();
     last={parsed:parsed,rt:rt,ot:ot,yg:yg,doR:doR,knowR:knowR};
 
     document.getElementById('ls').style.display='none';
